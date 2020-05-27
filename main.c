@@ -92,8 +92,10 @@ void input(char *args[]) {
 
     char buf[MAX_ARG_LENGTH * MAX_NUM_ARGS];
     fgets(buf, 200, stdin);
+    
     int number_of_args = countArgsBuf(buf);
     allocateArgsMemory(args, number_of_args);
+    
     bufToArgs(buf, args);
     
     for (int i = 0; i < number_of_args; i++) {
@@ -113,12 +115,25 @@ int main() {
     firstInit(args);
 
     int should_run = 1;
+    while (should_run == 1) {
+        printf("my_command:$ ");
+        fflush(stdout);
+        
+        /* (1) fork a child process using fork() */
+        // code ...
 
-    input(args);
-    execvp(args[0], args);
 
-    releaseArgsMemory(args);
+        /* (2) child process will invoke execvp() */
+        input(args);      
+        execvp(args[0], args);
 
-    // execvp(args[0], args);
+
+        /* (3) if command included &, parent will not invoke wait() */
+        // code ...
+
+
+        /* release memory allocation after using */
+        releaseArgsMemory(args);
+    }
     return 0;
 }
