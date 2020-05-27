@@ -116,7 +116,7 @@ int main() {
 
     int should_run = 1;
     while (should_run == 1) {
-        printf("my_command:$ ");
+        printf("oppa:$ ");
         fflush(stdout);
         
         /* (1) fork a child process using fork() */
