@@ -141,7 +141,7 @@ int isInputRedirecting(char *args[]) {
 // ----------------------------------------------
 int isOutputRedirecting(char *args[]) {
     /* 
-        check if '<' exists in args
+        check if '<' exists in shell
         ex: args[0] = 'ls'
             args[1] = '>'
             args[2] = 'output.txt'
@@ -157,11 +157,25 @@ int isOutputRedirecting(char *args[]) {
     return 0;
 }
 // ----------------------------------------------
+int isPipe(char *args[]) {
+    /*
+     *  check if '|' exist in shell
+     */
+    int number_of_args = countArgs(args);
+    for (int i = 0; i < number_of_args; i++) {
+        if (args[i][0] == '|') {
+            return 1;
+        }
+    }
+    return 0;
+}
+// ----------------------------------------------
 void executeArgs(char *args[]) {
 
     if (isInputRedirecting(args)) {
+        /* input redirection shell */
+
         int index = getCharIndex(args, '>');
-        
         args[index] = NULL;
         
         int fd = open(args[index + 1], O_WRONLY);
@@ -175,13 +189,41 @@ void executeArgs(char *args[]) {
         }
         dup2(fd, STDOUT_FILENO);
         execvp(args[0], args);
+
+        // if execvp failed, release memory and close manually
+        releaseArgsMemory(args);
         close(fd);
     }
     else
     if (isOutputRedirecting(args)) {
+        /* output redirection shell */
 
+        int index = getCharIndex(args, '<');
+        args[index] = NULL;
+
+        int fd = open(args[index + 1], O_RDONLY);
+        if (fd < 0) {
+            // when the file does not exist, nothing to read, we exit and do nothing
+            releaseArgsMemory(args);
+            exit(0);
+        }
+        else {
+            dup2(fd, STDIN_FILENO);
+            execvp(args[0], args);
+
+            // if execvp failed, release memory and close manually
+            releaseArgsMemory(args);
+            close(fd);
+        }
+    }
+    else 
+    if (isPipe(args)) {
+        /* pipe shell */
+
+        int index = getCharIndex(args, '|');
     }
     else {
+        /* simple shell */
         execvp(args[0], args);
     }
 }
