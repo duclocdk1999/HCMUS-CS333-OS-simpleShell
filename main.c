@@ -134,11 +134,16 @@ int main() {
             input(args);
             execvp(args[0], args);
 
-            // if the command does not exists
+            /*
+                if the execvp run successfully, no need to deallocate memory
+            */
+
+            // if the command does not exists, then execvp will return this current process
+            // therefore, we have to deallocate manually
             printf("error, command does not exist\n");
+            releaseArgsMemory(args);
             exit(1);
         }
     }
-
     return 0;
 }
