@@ -2,9 +2,13 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<signal.h>
+#include<wait.h>
 
 #define MAX_NUM_ARGS 10                                         /* The maximum number of arguments */
 #define MAX_ARG_LENGTH 50                                       /* The maximum length of an argument */
+
+static int finishedInput = 0;                                   /* This variable is used specific for child to execute command line after */
 
 // ----------------------------------------------
 void firstInit(char *args[]) {
@@ -98,9 +102,9 @@ void input(char *args[]) {
     
     bufToArgs(buf, args);
     
-    for (int i = 0; i < number_of_args; i++) {
-        printf("%s\n", args[i]);
-    }
+    // for (int i = 0; i < number_of_args; i++) {
+    //     printf("%s\n", args[i]);
+    // }
 }
 // ----------------------------------------------
 int main() {
@@ -111,29 +115,27 @@ int main() {
     *       args[1] = '--version'
     *       args[2] = NULL
     */
-    char *args[MAX_NUM_ARGS];
-    firstInit(args);
 
     int should_run = 1;
     while (should_run == 1) {
-        printf("oppa:$ ");
-        fflush(stdout);
-        
-        /* (1) fork a child process using fork() */
-        // code ...
 
+        int pid = fork();
+        if (pid > 0) {
+            // this is parent, let wait for user to enter command line
+            printf("oppa:$ ");
+            fflush(stdout);
 
-        /* (2) child process will invoke execvp() */
-        input(args);      
-        execvp(args[0], args);
+            wait(NULL);
+        }
+        else {
+            // this is child
+            char *args[MAX_NUM_ARGS];
+            firstInit(args);
 
-
-        /* (3) if command included &, parent will not invoke wait() */
-        // code ...
-
-
-        /* release memory allocation after using */
-        releaseArgsMemory(args);
+            input(args);
+            execvp(args[0], args);
+        }
     }
+
     return 0;
 }
