@@ -8,8 +8,6 @@
 #define MAX_NUM_ARGS 10                                         /* The maximum number of arguments */
 #define MAX_ARG_LENGTH 50                                       /* The maximum length of an argument */
 
-static int finishedInput = 0;                                   /* This variable is used specific for child to execute command line after */
-
 // ----------------------------------------------
 void firstInit(char *args[]) {
     // when this whole program first run, each memory location will be assigned to NULL
@@ -125,6 +123,7 @@ int main() {
             printf("oppa:$ ");
             fflush(stdout);
 
+            // parent will wait until child finished
             wait(NULL);
         }
         else {
@@ -134,6 +133,10 @@ int main() {
 
             input(args);
             execvp(args[0], args);
+
+            // if the command does not exists
+            printf("error, command does not exist\n");
+            exit(1);
         }
     }
 
