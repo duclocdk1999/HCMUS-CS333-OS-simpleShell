@@ -37,3 +37,6 @@ To check output-redirection, create and write a list of number to input.txt, the
 To check pipe function, type:
     ls                  # this will show on screen something like: main.c main makefile README.txt
     ls | grep main      # this will show on screen something like: main.c main
+
+To check history command line, type:
+    !!                  # this will execute your previous command line (which is saved in .history)
