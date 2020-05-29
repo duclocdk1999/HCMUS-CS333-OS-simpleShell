@@ -9,7 +9,7 @@
 #define MAX_NUM_ARGS 10                                         /* The maximum number of arguments */
 #define MAX_ARG_LENGTH 50                                       /* The maximum length of an argument */
 
-// ----------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 void firstInit(char *args[]) {
     // when this whole program first run, each memory location will be assigned to NULL
 
@@ -17,7 +17,7 @@ void firstInit(char *args[]) {
         args[i] = NULL;
     }
 }
-// ----------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 void releaseArgsMemory(char *args[]) {
     // after every loop (should_run == 1), release memory and init *args[] for new command line
 
@@ -27,7 +27,7 @@ void releaseArgsMemory(char *args[]) {
         args[index] = NULL;
     }
 }
-// ----------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 void allocateArgsMemory(char *args[], int number_of_args) {
     // allocate memory for every argument in *args[]
 
@@ -38,7 +38,7 @@ void allocateArgsMemory(char *args[], int number_of_args) {
         }
     }
 }
-// ----------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 int countArgs(char *args[]) {
     // count the number of arguments in command line
 
@@ -48,7 +48,7 @@ int countArgs(char *args[]) {
     }
     return count;
 }
-// ----------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 int countArgsBuf(char *buf) {
     // count the number of arguments in buffer
 
@@ -66,7 +66,7 @@ int countArgsBuf(char *buf) {
     }
     return count;
 }
-// ----------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 void bufToArgs(char *buf, char *args[]) {
     /*
     *   buffer[] = 'sudo apt-get update'
@@ -90,7 +90,7 @@ void bufToArgs(char *buf, char *args[]) {
         }
     }
 }
-// ----------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 void input(char *args[]) {
 
     char buf[MAX_ARG_LENGTH * MAX_NUM_ARGS];
@@ -101,7 +101,7 @@ void input(char *args[]) {
     
     bufToArgs(buf, args);
 }
-// ----------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 int getCharIndex(char *args[], char chr) {
 
     /*
@@ -120,7 +120,7 @@ int getCharIndex(char *args[], char chr) {
     }
     return -1;
 }
-// ----------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 int isInputRedirecting(char *args[]) {
     /*
      *  check if '>' exists in args
@@ -138,7 +138,7 @@ int isInputRedirecting(char *args[]) {
     }
     return 0;
 }
-// ----------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 int isOutputRedirecting(char *args[]) {
     /* 
         check if '<' exists in shell
@@ -156,7 +156,7 @@ int isOutputRedirecting(char *args[]) {
     }
     return 0;
 }
-// ----------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 int isPipe(char *args[]) {
     /*
      *  check if '|' exist in shell
@@ -169,65 +169,118 @@ int isPipe(char *args[]) {
     }
     return 0;
 }
-// ----------------------------------------------
-void executeArgs(char *args[]) {
+// --------------------------------------------------------------------------------------------------------
+void inputRedirectingExec(char *args[]) {
+    int index = getCharIndex(args, '>');
+    args[index] = NULL;
+    
+    int fd = open(args[index + 1], O_WRONLY);
+    if (fd < 0) {
+        // when the file does not exist, we have to create it first
 
-    if (isInputRedirecting(args)) {
-        /* input redirection shell */
+        FILE *fp = fopen(args[index + 1], "w");
+        fclose(fp);
 
-        int index = getCharIndex(args, '>');
-        args[index] = NULL;
-        
-        int fd = open(args[index + 1], O_WRONLY);
-        if (fd < 0) {
-            // when the file does not exist, we have to create it first
+        fd = open(args[index + 1], O_WRONLY);
+    }
+    dup2(fd, STDOUT_FILENO);
+    execvp(args[0], args);
 
-            FILE *fp = fopen(args[index + 1], "w");
-            fclose(fp);
+    // if execvp failed, release memory and close manually
+    releaseArgsMemory(args);
+    close(fd);
+}
+// --------------------------------------------------------------------------------------------------------
+void outputRedirectingExec(char *args[]) {
+    /* output redirection shell */
 
-            fd = open(args[index + 1], O_WRONLY);
-        }
-        dup2(fd, STDOUT_FILENO);
+    int index = getCharIndex(args, '<');
+    args[index] = NULL;
+
+    int fd = open(args[index + 1], O_RDONLY);
+    if (fd < 0) {
+        // when the file does not exist, nothing to read, we exit and do nothing
+        releaseArgsMemory(args);
+        exit(0);
+    }
+    else {
+        dup2(fd, STDIN_FILENO);
         execvp(args[0], args);
 
         // if execvp failed, release memory and close manually
         releaseArgsMemory(args);
         close(fd);
     }
+}
+// --------------------------------------------------------------------------------------------------------
+void pipeExec(char *args[]) {
+
+    int fd[2];
+    char buf[200];
+    pipe(fd);
+
+    int index = getCharIndex(args, '|');
+    args[index] = NULL;
+    
+    if (fork() == 0) {
+        // children's children process
+        close(fd[0]);
+
+        /* copy values from stdandard output (screen) to file fd[1] */
+        dup2(fd[1], STDOUT_FILENO);
+
+        /* run command before | */
+        execvp(args[0], args);
+
+        /* if execvp failed, release memory */
+        printf("left command failed!\n");
+        releaseArgsMemory(args);
+    }
+    else {
+        // chilren process
+        wait(NULL);
+        close(fd[1]);
+
+        /* 
+         * copy value from fd[0] to standard input (STDIN) 
+         * the grep command will read input from STDIN and return result on screen
+         */
+        dup2(fd[0], STDIN_FILENO);
+
+        /* run grep command */
+        execvp(args[index + 1], &args[index + 1]);
+
+        /* if execvp failed, release memory */
+        printf("grep command failed!\n");
+        releaseArgsMemory(args);
+    }
+}
+// --------------------------------------------------------------------------------------------------------
+void executeArgs(char *args[]) {
+
+    if (isInputRedirecting(args)) {
+        /* input redirection shell */
+
+        inputRedirectingExec(args);
+    }
     else
     if (isOutputRedirecting(args)) {
         /* output redirection shell */
 
-        int index = getCharIndex(args, '<');
-        args[index] = NULL;
-
-        int fd = open(args[index + 1], O_RDONLY);
-        if (fd < 0) {
-            // when the file does not exist, nothing to read, we exit and do nothing
-            releaseArgsMemory(args);
-            exit(0);
-        }
-        else {
-            dup2(fd, STDIN_FILENO);
-            execvp(args[0], args);
-
-            // if execvp failed, release memory and close manually
-            releaseArgsMemory(args);
-            close(fd);
-        }
+        outputRedirectingExec(args);
     }
     else 
     if (isPipe(args)) {
         /* pipe shell */
 
-        int index = getCharIndex(args, '|');
+        pipeExec(args);
     }
     else {
         /* simple shell */
         execvp(args[0], args);
     }
 }
-// ----------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 int main() {
 
     /*
@@ -256,7 +309,6 @@ int main() {
 
             input(args);
             executeArgs(args);
-            // execvp(args[0], args);
 
             /*
                 if the execvp run successfully, no need to deallocate memory
