@@ -1,7 +1,10 @@
 /*
- * 1751078 - Nguyễn Võ Đức Lộc
- * 1751012 - Nguyễn Chấn Nam
- * 17510   - Lê Hoàng Đạt
+ * HCMUS/CS333-Introduction to operating system/project02-simple shell
+ * 
+ * 1751078 - Nguyễn Võ Đức Lộc  - 17CTT2
+ * 1751012 - Nguyễn Chấn Nam    - 17CTT2
+ * 1751058 - Lê Hoàng Đạt       - 17CTT1
+ * 
  */
 
 #include<unistd.h>
