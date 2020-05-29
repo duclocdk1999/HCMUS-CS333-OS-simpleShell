@@ -1,3 +1,9 @@
+/*
+ * 1751078 - Nguyễn Võ Đức Lộc
+ * 1751012 - Nguyễn Chấn Nam
+ * 17510   - Lê Hoàng Đạt
+ */
+
 #include<unistd.h>
 #include<stdio.h>
 #include<stdlib.h>
