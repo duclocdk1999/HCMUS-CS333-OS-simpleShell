@@ -19,7 +19,6 @@ void firstInit(char *args[]) {
 }
 // --------------------------------------------------------------------------------------------------------
 void releaseArgsMemory(char *args[]) {
-    // after every loop (should_run == 1), release memory and init *args[] for new command line
 
     int index = 0;
     while (args[index] != NULL) {
@@ -91,10 +90,88 @@ void bufToArgs(char *buf, char *args[]) {
     }
 }
 // --------------------------------------------------------------------------------------------------------
+int getLastCharIndex(char buf[], char chr) {
+    /*
+     *  buf = 'sudo apt get update'
+     *  chr = ' '
+     *  getLastCharIndex return 12
+     */
+
+    int len = strlen(buf);
+    for (int i = len - 1; i >= 0; i--) {
+        if (buf[i] == chr) {
+            return i;
+        }
+    }
+    return -1;
+}
+// --------------------------------------------------------------------------------------------------------
+void loadFromHistory(char buf[]) {
+    
+    FILE *file = fopen(".history", "r");
+    if (!file) {
+        /* file does not exist, create it first */
+
+        file = fopen(".history", "w");
+        fclose(file);
+        printf("No commands in history!\n");
+        exit(0);
+    }
+
+    /* read the last line in history */
+    char temp_buf[MAX_ARG_LENGTH * MAX_NUM_ARGS];
+    fseek(file, -MAX_ARG_LENGTH * MAX_NUM_ARGS, SEEK_END);
+    int len = read(fileno(file), temp_buf, MAX_ARG_LENGTH * MAX_NUM_ARGS);
+    temp_buf[len] = '\0';
+    
+    if (len < 1) {
+        printf("No command in history!\n");
+        exit(0);
+    }
+
+    int lastLineIndex = getLastCharIndex(temp_buf, '\n') + 1;
+    for (int i = lastLineIndex; i < len; i++) {
+        buf[i - lastLineIndex] = temp_buf[i];
+    }
+    buf[len] = '\0';
+
+    printf("%s\n", buf);
+}
+// --------------------------------------------------------------------------------------------------------
+void saveToHistory(char buf[]) {
+
+    /* delete last \n of buffer */
+    int len = strlen(buf);
+    for (int i = len - 1; i > 0; i--)
+        if (buf[i] == '\n') {
+            buf[i] = '\0';
+            break;
+        }
+
+    FILE *file = fopen(".history", "a");
+    if (!file) {
+        /* if file does not exist, create it first */
+        file = fopen(".history", "w");
+        fclose(file);
+        file = fopen(".history", "a");
+    }
+
+    fprintf(file, "\n%s", buf);
+    fclose(file);
+}
+// --------------------------------------------------------------------------------------------------------
 void input(char *args[]) {
 
     char buf[MAX_ARG_LENGTH * MAX_NUM_ARGS];
     fgets(buf, 200, stdin);
+    
+    if (buf[0] == '!' && buf[1] == '!') {
+        /* load command line from .history */
+        loadFromHistory(buf);
+    }
+    else {
+        saveToHistory(buf);
+    }
     
     int number_of_args = countArgsBuf(buf);
     allocateArgsMemory(args, number_of_args);
@@ -171,6 +248,8 @@ int isPipe(char *args[]) {
 }
 // --------------------------------------------------------------------------------------------------------
 void inputRedirectingExec(char *args[]) {
+    /* input redirection shell execution */
+
     int index = getCharIndex(args, '>');
     args[index] = NULL;
     
@@ -192,7 +271,7 @@ void inputRedirectingExec(char *args[]) {
 }
 // --------------------------------------------------------------------------------------------------------
 void outputRedirectingExec(char *args[]) {
-    /* output redirection shell */
+    /* output redirection shell execution */
 
     int index = getCharIndex(args, '<');
     args[index] = NULL;
@@ -277,6 +356,7 @@ void executeArgs(char *args[]) {
     }
     else {
         /* simple shell */
+
         execvp(args[0], args);
     }
 }

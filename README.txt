@@ -34,3 +34,6 @@ To check output-redirection, create and write a list of number to input.txt, the
         7
         8
         9
+To check pipe function, type:
+    ls                  # this will show on screen something like: main.c main makefile README.txt
+    ls | grep main      # this will show on screen something like: main.c main
