@@ -305,7 +305,7 @@ void pipeExec(char *args[]) {
 
     int fd[2];
     char buf[200];
-    pipe(fd);
+    pipe(fd);                           /* write fo fd[0], read from fd[1] */
 
     int index = getCharIndex(args, '|');
     args[index] = NULL;
@@ -385,7 +385,9 @@ int main() {
         int pid = fork();
         if (pid > 0) {
             // this is parent process
+            printf("\033[1;31m");           /* set color to red */
             printf("oppa:$ ");
+            printf("\033[0m");              /* reset color */
             fflush(stdout);
 
             // parent will wait until child finished
