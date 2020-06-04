@@ -1,4 +1,5 @@
 # OS-project02
+# this project is implemented to simulate how a shell works.
 
 Open terminal, type:
     make all
