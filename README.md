@@ -1,5 +1,5 @@
 # OS-project02-simpleShell
-# this project is implemented to simulate how a shell works.
+## this project is implemented to simulate how a shell works.
 
 
 # Open terminal, type:
