@@ -1,7 +1,6 @@
 # OS-project02-simpleShell
 ## this project is implemented to simulate how a shell works.
 #
-#
 ## Open terminal, type:
     make all
     ./main
