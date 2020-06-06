@@ -14,6 +14,7 @@
 #include<signal.h>
 #include<wait.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 
 #define MAX_NUM_ARGS 10                                         /* The maximum number of arguments */
 #define MAX_ARG_LENGTH 50                                       /* The maximum length of an argument */
@@ -179,7 +180,9 @@ void input(char *args[]) {
         loadFromHistory(buf);
     }
     else {
-        saveToHistory(buf);
+            if (buf[0] != '\n') {
+                saveToHistory(buf);
+            }
     }
     
     int number_of_args = countArgsBuf(buf);
@@ -305,7 +308,7 @@ void pipeExec(char *args[]) {
 
     int fd[2];
     char buf[200];
-    pipe(fd);                           /* write fo fd[0], read from fd[1] */
+    pipe(fd);
 
     int index = getCharIndex(args, '|');
     args[index] = NULL;
@@ -381,32 +384,47 @@ int main() {
 
     int should_run = 1;
     while (should_run == 1) {
+        // Status variable to check run concurrently or not
+        int status = 1;
+
+        char *args[MAX_NUM_ARGS];
+        firstInit(args);
+
+        printf("oppa:$ ");
+        fflush(stdout);
+
+        input(args);
+
+        if (strcmp(args[countArgs(args) - 1], "&") == 0) {
+            status = 0;
+            args[countArgs(args) - 1] = NULL;
+        }
 
         int pid = fork();
+
         if (pid > 0) {
             // this is parent process
-            printf("\033[1;31m");           /* set color to red */
-            printf("oppa:$ ");
-            printf("\033[0m");              /* reset color */
-            fflush(stdout);
-
+            // if &, not need to wait
+            if (status == 0)
+                continue;
+                
             // parent will wait until child finished
-            wait(NULL);
+            waitpid(pid, NULL, 0);
         }
         else {
             // this is child process
-            char *args[MAX_NUM_ARGS];
-            firstInit(args);
-
-            input(args);
             executeArgs(args);
-
             /*
                 if the execvp run successfully, no need to deallocate memory
                 However, if the command does not exists, then execvp will return this current process
                 Therefore, we have to release memory allocation manually
             */
-            printf("error, command does not exist\n");
+            
+            // if user enter nothing, we print nothing. 
+            // Otherwise, tell them their command does not exist or syntax error
+            if (args[0][0] != '\0')
+                printf("error, command does not exist\n");
+            
             releaseArgsMemory(args);
             exit(1);
         }
