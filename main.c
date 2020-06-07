@@ -390,7 +390,9 @@ int main() {
         char *args[MAX_NUM_ARGS];
         firstInit(args);
 
+        printf("\033[1;31m");           /* set color to red */
         printf("oppa:$ ");
+        printf("\033[0m");              /* reset color */
         fflush(stdout);
 
         input(args);
@@ -409,7 +411,8 @@ int main() {
                 continue;
                 
             // parent will wait until child finished
-            waitpid(pid, NULL, 0);
+            // waitpid(pid, NULL, 0);
+            wait(NULL);
         }
         else {
             // this is child process
