@@ -1,6 +1,9 @@
 # OS-project02-simpleShell
 ## this project is implemented to simulate how a shell works.
-#
+## requirement:
+    Linux operating system
+    gcc                 # could be isntalled by command: sudo apt-get install gcc
+    make                # could be installed by command: sudo apt-get install make
 ## Open terminal, type:
     make all
     ./main
